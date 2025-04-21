@@ -259,7 +259,7 @@ const NoteApp: React.FC = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-6 max-h-[100vh] overflow-y-auto">
             <h2 className="text-2xl font-semibold text-gray-800">Dashboard</h2>
 
             {/* Quick Write */}
@@ -307,10 +307,11 @@ const NoteApp: React.FC = () => {
                     <h4 className="font-medium text-gray-700 mb-2">Recent Highlights</h4>
                     <ul className="space-y-1 text-sm">
                         {highlights.slice(0, 3).map(h => (
-                            <li key={h.id} className={`p-1 rounded ${h.color} ${TEXT_COLORS[COLORS.indexOf(h.color) % TEXT_COLORS.length]}`}>
+                            <li onClick={() => openItemPopup(h, 'highlight')} key={h.id} className={`p-1 cursor-pointer rounded ${h.color} ${TEXT_COLORS[COLORS.indexOf(h.color) % TEXT_COLORS.length]}`}>
                                 {h.text.substring(0, 50)}{h.text.length > 50 ? '...' : ''}
                             </li>
                         ))}
+                        {highlights.length > 3 && <p onClick={()=>{setCurrentView('highlights')}} className="text-green-500 cursor-pointer">More...</p>}
                         {highlights.length === 0 && <p className="text-gray-500">No highlights yet.</p>}
                     </ul>
                 </div>
@@ -318,10 +319,11 @@ const NoteApp: React.FC = () => {
                     <h4 className="font-medium text-gray-700 mb-2">Upcoming Todos</h4>
                     <ul className="space-y-1 text-sm">
                        {todos.filter(t => !t.completed).slice(0, 3).map(t => (
-                            <li key={t.id} className={`p-1 rounded ${t.color} ${TEXT_COLORS[COLORS.indexOf(t.color) % TEXT_COLORS.length]}`}>
+                            <li onClick={() => openItemPopup(t, 'todo')} key={t.id} className={`p-1 rounded ${t.color} ${TEXT_COLORS[COLORS.indexOf(t.color) % TEXT_COLORS.length]}`}>
                                 {t.text.substring(0, 50)}{t.text.length > 50 ? '...' : ''}
                             </li>
                         ))}
+                        {todos.filter(t => !t.completed).length > 3 && <p onClick={()=>{setCurrentView('todos')}} className="text-blue-500 cursor-pointer">More...</p>}
                         {todos.filter(t => !t.completed).length === 0 && <p className="text-gray-500">No active todos.</p>}
                     </ul>
                 </div>
@@ -329,10 +331,11 @@ const NoteApp: React.FC = () => {
                     <h4 className="font-medium text-gray-700 mb-2">Upcoming Events</h4>
                      <ul className="space-y-1 text-sm">
                         {events.filter(e => new Date(e.date) >= new Date(formatDateYYYYMMDD(new Date()))).slice(0, 3).map(e => (
-                             <li key={e.id} className={`p-1 rounded ${e.color} ${TEXT_COLORS[COLORS.indexOf(e.color) % TEXT_COLORS.length]}`}>
+                             <li onClick={() => openItemPopup(e, 'event')} key={e.id} className={`p-1 rounded ${e.color} ${TEXT_COLORS[COLORS.indexOf(e.color) % TEXT_COLORS.length]}`}>
                                 {e.date}: {e.title.substring(0, 40)}{e.title.length > 40 ? '...' : ''}
                             </li>
                         ))}
+                         {events.filter(e => new Date(e.date) >= new Date(formatDateYYYYMMDD(new Date()))).length > 3 && <p onClick={()=>{setCurrentView('calendar')}} className="text-orange-500 cursor-pointer">More ...</p>}
                          {events.filter(e => new Date(e.date) >= new Date(formatDateYYYYMMDD(new Date()))).length === 0 && <p className="text-gray-500">No upcoming events.</p>}
                     </ul>
                 </div>
@@ -356,7 +359,7 @@ const NoteApp: React.FC = () => {
     };
 
     return (
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6 max-h-[100vh] overflow-y-auto">
         <h2 className="text-2xl font-semibold text-gray-800">Highlights</h2>
         <div className="bg-white p-4 rounded-lg shadow space-y-3">
           <textarea
@@ -411,7 +414,7 @@ const NoteApp: React.FC = () => {
     };
 
     return (
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6 max-h-[100vh] overflow-y-auto">
         <h2 className="text-2xl font-semibold text-gray-800">Todo List</h2>
         <div className="bg-white p-4 rounded-lg shadow space-y-3">
           <input
@@ -499,7 +502,7 @@ const NoteApp: React.FC = () => {
         const selectedDayHighlights = selectedDate ? highlightsByDate[selectedDate] || [] : [];
 
         return (
-            <div className="p-4 md:p-6 space-y-6">
+            <div className="p-4 md:p-6 space-y-6 max-h-[100vh] overflow-y-auto">
                 <h2 className="text-2xl font-semibold text-gray-800">Calendar</h2>
 
                  {/* Add Event Form (appears when a date is selected) */}
@@ -579,10 +582,10 @@ const NoteApp: React.FC = () => {
                                     <div className="flex-grow overflow-y-auto text-xs space-y-0.5 mt-1">
                                        {/* Display indicators for events and highlights */}
                                        {dayEvents.map(e => (
-                                         <div key={e.id} className={`h-1.5 w-full rounded-full ${e.color} mb-0.5`} title={e.title}></div>
+                                         <div key={e.id} id={`e_`+e.id} className={`h-auto w-full rounded-full ${e.color} px-3 mb-0.5`} title={e.title}>{e.title}</div>
                                        ))}
                                         {dayHighlights.map(h => (
-                                           <div key={h.id} className={`h-1.5 w-full rounded-full ${h.color} opacity-60 mb-0.5`} title={h.text.substring(0, 30)}></div>
+                                           <div key={h.id} id={`h_`+h.id} className={`h-auto w-full rounded-full ${h.color} px-3 opacity-60 mb-0.5`} title={h.text.substring(0, 30)}>{h.text.substring(0, 30)}</div>
                                         ))}
                                     </div>
                                      {/* Highlight border if it has related items from other modules */}
@@ -648,7 +651,7 @@ const NoteApp: React.FC = () => {
       };
 
       return (
-          <div className="p-4 md:p-6 space-y-6">
+          <div className="p-4 md:p-6 space-y-6 max-h-[100vh] overflow-y-auto">
               <h2 className="text-2xl font-semibold text-gray-800">Ideapad</h2>
               <div className="bg-white p-4 rounded-lg shadow space-y-3">
                   <textarea
@@ -703,7 +706,7 @@ const NoteApp: React.FC = () => {
     }
 
     return (
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6 max-h-[100vh] overflow-y-auto">
         <h2 className="text-2xl font-semibold text-gray-800">Resources</h2>
         <div className="bg-white p-4 rounded-lg shadow space-y-3">
             <input
