@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Checkbox} from "./components/ui/checkbox";
+import { format } from 'date-fns';
 
 const version = '2.0.0';
 
@@ -372,7 +373,7 @@ const NoteApp: React.FC = () => {
     // Highlight Section
     const HighlightSection = () => {
         const [newHighlightText, setNewHighlightText] = useState('');
-        const [newHighlightDate, setNewHighlightDate] = useState(formatDateForInput(new Date().toISOString()));
+        const [newHighlightDate, setNewHighlightDate] = useState(format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'));
         const [newHighlightColor, setNewHighlightColor] = useState(COLORS[0]);
 
         const handleAddHighlight = () => {
@@ -380,7 +381,7 @@ const NoteApp: React.FC = () => {
             const datetime = new Date(newHighlightDate).toISOString();
             addHighlight(newHighlightText, datetime, newHighlightColor);
             setNewHighlightText('');
-            setNewHighlightDate(formatDateForInput(new Date().toISOString()));
+            setNewHighlightDate(format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'));
         };
 
         return (<div className="p-4 md:p-6 space-y-6 max-h-[100vh] overflow-y-auto">
@@ -616,7 +617,7 @@ const NoteApp: React.FC = () => {
 
                             return (<div
                                     key={dateStr}
-                                    className={`border p-1 h-20 md:h-24 flex flex-col cursor-pointer transition-colors relative ${isSelected ? 'bg-indigo-100 border-indigo-300' : isToday ? 'bg-amber-50 border-amber-200' : 'border-gray-200 hover:bg-gray-50'}`}
+                                    className={`border p-1 lg:h-32 md:h-24 flex flex-col cursor-pointer transition-colors relative ${isSelected ? 'bg-indigo-100 border-indigo-300' : isToday ? 'bg-amber-50 border-amber-200' : 'border-gray-200 hover:bg-gray-50'}`}
                                     onClick={() => setSelectedDate(dateStr)}
                                 >
                                     <span
@@ -641,17 +642,15 @@ const NoteApp: React.FC = () => {
 
                 {/* Timeline / Day View (Simple) */}
                 {selectedDate && (<div className="bg-white p-4 rounded-lg shadow mt-6">
-                        <h3 className="text-lg font-medium text-gray-700 mb-3">Details
-                            for {selectedDate} {selectedDate === todayStr ? '(Today)' : ''}</h3>
+                        <h3 className="text-lg font-medium text-gray-700 mb-3">詳情
+                            {selectedDate} {selectedDate === todayStr ? '(今天)' : ''}</h3>
                         <div className="space-y-3 max-h-60 overflow-y-auto">
-                            <h4 className="text-sm font-semibold text-indigo-700 mt-2 border-b pb-1">Events</h4>
+                            <h4 className="text-sm font-semibold text-indigo-700 mt-2 border-b pb-1">事件</h4>
                             {selectedDayEvents.length > 0 ? (selectedDayEvents.sort((a, b) => a.createdAt - b.createdAt).map(event => (
                                     <div key={event.id} className={`p-2 rounded ${event.color} relative group`}>
                                         <p className={`font-medium ${TEXT_COLORS[COLORS.indexOf(event.color) % TEXT_COLORS.length]}`}>{event.title}</p>
-                                        {event.relatedHighlightId && <p className="text-xs opacity-75">Linked
-                                            Highlight: {highlights.find(h => h.id === event.relatedHighlightId)?.text.substring(0, 30) || 'N/A'}...</p>}
-                                        {event.relatedResourceId && <p className="text-xs opacity-75">Linked
-                                            Resource: {resources.find(r => r.id === event.relatedResourceId)?.name || 'N/A'}</p>}
+                                        {event.relatedHighlightId && <p className="text-xs opacity-75">關聯重點: {highlights.find(h => h.id === event.relatedHighlightId)?.text.substring(0, 30) || 'N/A'}...</p>}
+                                        {event.relatedResourceId && <p className="text-xs opacity-75">關聯資源: {resources.find(r => r.id === event.relatedResourceId)?.name || 'N/A'}</p>}
                                         <div
                                             className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button onClick={() => openItemPopup(event, 'event')}
@@ -661,9 +660,9 @@ const NoteApp: React.FC = () => {
                                                     className="p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 text-xs leading-none">🗑️
                                             </button>
                                         </div>
-                                    </div>))) : <p className="text-gray-500 text-sm">No events scheduled.</p>}
+                                    </div>))) : <p className="text-gray-500 text-sm">沒有安排事件。</p>}
 
-                            <h4 className="text-sm font-semibold text-purple-700 mt-4 border-b pb-1">Highlights</h4>
+                            <h4 className="text-sm font-semibold text-purple-700 mt-4 border-b pb-1">重點</h4>
                             {selectedDayHighlights.length > 0 ? (selectedDayHighlights.sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()).map(hl => (
                                     <div key={hl.id} className={`p-2 rounded ${hl.color} relative group`}>
                                         <p className={`${TEXT_COLORS[COLORS.indexOf(hl.color) % TEXT_COLORS.length]}`}>{hl.text}</p>
@@ -677,7 +676,7 @@ const NoteApp: React.FC = () => {
                                                     className="p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 text-xs leading-none">🗑️
                                             </button>
                                         </div>
-                                    </div>))) : <p className="text-gray-500 text-sm">No highlights for this day.</p>}
+                                    </div>))) : <p className="text-gray-500 text-sm">這一天沒有重點。</p>}
                         </div>
                     </div>)}
             </div>);
@@ -880,14 +879,14 @@ const NoteApp: React.FC = () => {
                         {type === 'highlight' && (item as Highlight).text && (<>
                                 <p className="font-medium">重點:</p>
                                 <p className="whitespace-pre-wrap">{(item as Highlight).text}</p>
-                                <p className="font-medium mt-2">Date/Time:</p>
+                                <p className="font-medium mt-2">日期時間:</p>
                                 <p>{formatDate((item as Highlight).datetime)}</p>
                             </>)}
                         {type === 'todo' && (item as Todo).text && (<>
                                 <p className="font-medium">任務:</p>
                                 <p className={`${(item as Todo).completed ? 'line-through' : ''}`}>{(item as Todo).text}</p>
-                                <p className="font-medium mt-2">Status:</p>
-                                <p>{(item as Todo).completed ? 'Completed' : 'Pending'}</p>
+                                <p className="font-medium mt-2">狀態:</p>
+                                <p>{(item as Todo).completed ? '完成' : '執行中'}</p>
                             </>)}
                         {type === 'event' && (item as CalendarEvent).title && (<>
                                 <p className="font-medium">標題:</p>
