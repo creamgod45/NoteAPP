@@ -378,7 +378,7 @@ const NoteApp: React.FC = () => {
 
         const handleAddHighlight = () => {
             if (!newHighlightText.trim()) return;
-            const datetime = new Date(newHighlightDate).toISOString();
+            const datetime = format(new Date(newHighlightDate), 'yyyy-MM-dd\'T\'HH:mm');
             addHighlight(newHighlightText, datetime, newHighlightColor);
             setNewHighlightText('');
             setNewHighlightDate(format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'));
