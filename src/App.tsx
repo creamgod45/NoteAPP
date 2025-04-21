@@ -606,7 +606,7 @@ const NoteApp: React.FC = () => {
                     <div className="grid grid-cols-7 gap-1">
                         {/* Empty cells before the first day */}
                         {Array.from({length: firstDayOfMonth}).map((_, index) => (
-                            <div key={`empty-${index}`} className="border border-gray-100 h-20 md:h-24"></div>))}
+                            <div key={`empty-${index}`} className="border border-gray-100 lg:h-32 md:h-24"></div>))}
                         {/* Days of the month */}
                         {daysInMonth.map(day => {
                             const dateStr = formatDateYYYYMMDD(day);
