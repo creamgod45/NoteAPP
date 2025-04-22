@@ -1,8 +1,9 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Checkbox} from "./components/ui/checkbox";
+import {FileOperations} from "./components/ui/FileOperations";
 import { format } from 'date-fns';
 
-const version = '2.0.0';
+const version = '2.1.0';
 
 // Define Data Structures
 interface Highlight {
@@ -42,7 +43,7 @@ interface Resource {
 }
 
 type View = 'dashboard' | 'highlights' | 'todos' | 'calendar' | 'ideapad' | 'resources';
-type ItemType = 'highlight' | 'todo' | 'event' | 'resource' | 'ideapadNote';
+type ItemType = 'highlight' | 'todo' | 'event' | 'resource' | 'ideapadNote' | 'import';
 type Item = Highlight | Todo | CalendarEvent | Resource | {
     id: string;
     text: string;
@@ -53,6 +54,27 @@ type Item = Highlight | Todo | CalendarEvent | Resource | {
 const COLORS = ['bg-red-200', 'bg-yellow-200', 'bg-green-200', 'bg-blue-200', 'bg-indigo-200', 'bg-purple-200', 'bg-pink-200', 'bg-gray-200'];
 const BORDER_COLORS = ['border-red-500', 'border-yellow-500', 'border-green-500', 'border-blue-500', 'border-indigo-500', 'border-purple-500', 'border-pink-500', 'border-gray-500'];
 const TEXT_COLORS = ['text-red-800', 'text-yellow-800', 'text-green-800', 'text-blue-800', 'text-indigo-800', 'text-purple-800', 'text-pink-800', 'text-gray-800'];
+
+const downloadFile = (data: string | ArrayBuffer | ArrayBufferView, filename: string, mimeType: string) => {
+    // 創建 Blob 對象
+    const blob = new Blob([data], { type: mimeType });
+
+    // 創建下載鏈接
+    const url = URL.createObjectURL(blob);
+
+    // 創建一個隱藏的連結元素
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+
+    // 模擬點擊
+    document.body.appendChild(link);
+    link.click();
+
+    // 清理
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
 
 const NoteApp: React.FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -96,6 +118,70 @@ const NoteApp: React.FC = () => {
             setIsLoading(false);
         }
     }, []);
+
+    interface ExportData {
+        highlights: Highlight[];
+        todos: Todo[];
+        events: CalendarEvent[];
+        resources: Resource[];
+        ideapadNotes: {
+            id: string;
+            text: string;
+            createdAt: number;
+            color: string;
+        }[];
+        version: string;
+    }
+
+    const handleExportData = (): void => {
+        const appData: ExportData = {
+            highlights,
+            todos,
+            events,
+            resources,
+            ideapadNotes,
+            version
+        };
+
+        const jsonData = JSON.stringify(appData, null, 2);
+        const filename = `note-app-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
+
+        downloadFile(jsonData, filename, 'application/json');
+    };
+    
+    // 處理匯入的數據
+    const handleImportData = (importedData: any) => {
+        // 驗證匯入的資料結構
+        if (importedData.version &&
+            Array.isArray(importedData.highlights) &&
+            Array.isArray(importedData.todos)) {
+
+            // 更新狀態
+            setHighlights(importedData.highlights || []);
+            setTodos(importedData.todos || []);
+            setEvents(importedData.events || []);
+            setResources(importedData.resources || []);
+            setIdeapadNotes(importedData.ideapadNotes || []);
+
+            // 儲存到 localStorage
+            saveData();
+
+            // 可選：顯示成功訊息
+            // ...
+        } else {
+            alert('匯入的資料格式不正確');
+        }
+    };
+
+    const exportData = {
+        highlights,
+        todos,
+        events,
+        resources,
+        ideapadNotes,
+        version // 您應用的版本
+    };
+
 
     const saveData = useCallback(() => {
         if (isLoading) return; // Don't save while initially loading
@@ -258,7 +344,7 @@ const NoteApp: React.FC = () => {
 
             switch (quickWriteTarget) {
                 case 'highlight':
-                    addHighlight(quickWriteText, new Date().toISOString(), quickWriteColor);
+                    addHighlight(quickWriteText, format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'), quickWriteColor);
                     break;
                 case 'todo':
                     addTodo(quickWriteText, quickWriteColor);
@@ -848,6 +934,9 @@ const NoteApp: React.FC = () => {
             case "todo":
                 view = "todos";
                 break;
+            case "import":
+                view = "dashboard";
+                break;
         }
         switch (type) {
             case 'event':
@@ -865,6 +954,9 @@ const NoteApp: React.FC = () => {
             case "todo":
                 viewText = "任務";
                 break;
+            case "import":
+                viewText = "匯入資料";
+                break;
         }
 
         return (<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
@@ -873,9 +965,17 @@ const NoteApp: React.FC = () => {
                      onClick={e => e.stopPropagation()}>
                     <button onClick={closeItemPopup}
                             className="absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-2xl font-bold">&times;</button>
-                    <h3 className={`text-xl font-semibold mb-4 ${textColorClass}`}>檢視{viewText}</h3>
+                    <h3 className={`text-xl font-semibold mb-4 ${textColorClass}`}>{type !== 'import' && <>檢視</>}{viewText}</h3>
 
                     <div className={`space-y-2 text-sm ${textColorClass}`}>
+                        {type === 'import' && (<>
+                            <FileOperations
+                                data={exportData}
+                                onImport={handleImportData}
+                                fileNamePrefix="note-app-backup"
+                                className="mt-4"
+                            />
+                        </>)}
                         {type === 'highlight' && (item as Highlight).text && (<>
                                 <p className="font-medium">重點:</p>
                                 <p className="whitespace-pre-wrap">{(item as Highlight).text}</p>
@@ -913,8 +1013,10 @@ const NoteApp: React.FC = () => {
                                 <p className="font-medium">點子:</p>
                                 <p className="whitespace-pre-wrap">{(item as { text: string }).text}</p>
                             </>)}
-                        <p className="font-medium mt-2">建立時間:</p>
-                        <p>{formatDate(item.createdAt)}</p>
+                        {type !== 'import' && <>
+                            <p className="font-medium mt-2">建立時間:</p>
+                            <p>{formatDate(item.createdAt)}</p>
+                        </>}
                     </div>
 
                     <button
@@ -923,6 +1025,7 @@ const NoteApp: React.FC = () => {
                     >
                         關閉
                     </button>
+                    {type !== 'import' && <>
                     <button
                         onClick={() => {
                             setCurrentView(view as View)
@@ -939,8 +1042,7 @@ const NoteApp: React.FC = () => {
                     >
                         前往 {viewText}
                     </button>
-
-
+                    </>}
                 </div>
             </div>);
     };
@@ -961,6 +1063,27 @@ const NoteApp: React.FC = () => {
                                 {(view as String) === "dashboard" ? "儀錶板" : (view as String) === "highlights" ? "重點" : (view as String) === "todos" ? "任務" : (view as String) === "ideapad" ? "點子" : (view as String) === "resources" ? "資源" : (view as String) === "calendar" ? "行事曆" : (view as String) }
                             </button>
                         </li>))}
+                        <li>
+                            <button
+                                onClick={handleExportData}
+                                className="w-full text-left px-3 py-2 rounded hover:bg-indigo-700 transition-colors"
+                            >
+                                匯出資料
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                onClick={()=>{openItemPopup({
+                                    id: 'import',
+                                    color: 'bg-blue-500',
+                                    text: "string",
+                                    createdAt: new Date().valueOf(),
+                                }, 'import')}}
+                                className="w-full text-left px-3 py-2 rounded hover:bg-indigo-700 transition-colors"
+                            >
+                                匯入資料
+                            </button>
+                        </li>
                 </ul>
                 <div className="flex items-center justify-center w-full h-max">
                     <footer className="absolute bottom-0 h-fit center">Design by <a target="_blank"
